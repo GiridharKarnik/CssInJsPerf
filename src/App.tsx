@@ -1,6 +1,12 @@
-import React, { useState, useEffect, Profiler } from "react";
+import React, { useState, Profiler } from "react";
 import styled from "styled-components";
-import ListRow from "./components/ListRow";
+
+import ListRowStyledComponent from "./components/styledComponents/ListRow";
+import ListRowInlineStyles from "./components/inlineStyles/ListRow";
+import ListRowCssStyled from "./components/cssStyled/ListRow";
+import ListRowLinaria from "./components/linaria/ListRow";
+
+import postMeasurements from "./network";
 
 // import Perf from "react-addons-perf";
 
@@ -19,19 +25,18 @@ const ChangeData = styled.button`
   border: none;
 `;
 
-const callback = (
-  id: any,
-  phase: any,
-  actualDuration: any,
-  baseTime: any,
-  startTime: any,
-  commitTime: any
-) => {
-  console.log(`${id}'s ${phase} phase:`);
-  console.log(`Actual Duration: ${actualDuration}`);
-  // console.log(`Base time: ${baseTime}`);
-  // console.log(`Start time: ${startTime}`);
-  // console.log(`Commit time: ${commitTime}`);
+let measurements: { [key: string]: any } = {};
+
+const callback = (id: string, phase: any, actualDuration: any) => {
+  measurements[id] = actualDuration.toFixed(2);
+
+  if (Object.keys(measurements).length === 4) {
+    postMeasurements(measurements).then((response) => {
+      console.log("posted");
+
+      measurements = {};
+    });
+  }
 };
 
 const App: React.FC = () => {
@@ -50,22 +55,46 @@ const App: React.FC = () => {
     data = data2;
   }
 
-  useEffect(() => {
-    return () => {
-      console.log("component updated");
-      // Perf.stop();
-      // Perf.printInclusive();
-      // Perf.printWasted();
-    };
-  });
-
   return (
     <Container>
       <ChangeData onClick={changeDataSource}>Change data source</ChangeData>
-      <Profiler id="root" onRender={callback}>
+      <Profiler id="styled-components" onRender={callback}>
         {data.map((item) => {
           return (
-            <ListRow
+            <ListRowStyledComponent
+              {...item}
+              key={`${item.firstName} ${item.lastName} ${item.id}`}
+            />
+          );
+        })}
+      </Profiler>
+
+      <Profiler id="inline styles" onRender={callback}>
+        {data.map((item) => {
+          return (
+            <ListRowInlineStyles
+              {...item}
+              key={`${item.firstName} ${item.lastName} ${item.id}`}
+            />
+          );
+        })}
+      </Profiler>
+
+      <Profiler id="css" onRender={callback}>
+        {data.map((item) => {
+          return (
+            <ListRowCssStyled
+              {...item}
+              key={`${item.firstName} ${item.lastName} ${item.id}`}
+            />
+          );
+        })}
+      </Profiler>
+
+      <Profiler id="linaria" onRender={callback}>
+        {data.map((item) => {
+          return (
+            <ListRowLinaria
               {...item}
               key={`${item.firstName} ${item.lastName} ${item.id}`}
             />
